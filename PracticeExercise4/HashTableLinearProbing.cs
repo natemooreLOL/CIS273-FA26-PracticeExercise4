@@ -1,4 +1,6 @@
-﻿namespace PracticeExercise4;
+﻿using System.Data;
+
+namespace PracticeExercise4;
 
 public class HashTableLinearProbing<K, V> : IHashTable<K, V>
 {
@@ -10,7 +12,13 @@ public class HashTableLinearProbing<K, V> : IHashTable<K, V>
 
     public HashTableLinearProbing()
     {
-        // init all hash entries 
+        // init all hash entries
+        hashEntries = new HashEntry<K,V>[initialCapacity];
+
+        for(int i=0; i<hashEntries.Length; i++)
+        {
+            hashEntries[i] = new HashEntry<K, V>();
+        }
     }
 
     private int count;
@@ -20,25 +28,39 @@ public class HashTableLinearProbing<K, V> : IHashTable<K, V>
 
     public bool Add(K key, V value)
     {
+        if(key is null)
+        {
+            throw new NoNullAllowedException();
+        }
         // if key is already present, update its value
-
+        if(Update(key, value))
+        {
+            return true;
+        }
 
         // resize if needed
-
+        if (LoadFactor > MAX_LOAD_FACTOR)
+        {
+            Resize();
+        }
 
         // get the hash of the key
-
+        int hash = Hash(key);
 
         // find the array index for this hash
-
+        int index = hash % hashEntries.Length;
 
         // if there's a collision at that index, find the next available index
         // (an EmptyAfterRemoval slot can be reused, since Update already
         // confirmed the key isn't further along the probe sequence)
-
+        while (hashEntries[index].State == HashEntryState.Full)
+        {
+            index = (index+1)%hashEntries.Length;
+        }
 
         // save key/value pair at correct index
-
+        hashEntries[index] = new HashEntry<K,V>(key,value);
+        count++;
 
         return false;
 
@@ -48,43 +70,137 @@ public class HashTableLinearProbing<K, V> : IHashTable<K, V>
     private bool Update(K key, V value)
     {
         // find starting index
-
+        int index = Hash(key)%hashEntries.Length;
 
         // keep probing past Full and EmptyAfterRemoval slots;
         // stop at EmptySinceStart, since the key can't be beyond a never-used slot
-
+        while(hashEntries[index].State != HashEntryState.EmptySinceStart)
+        {
+            if(hashEntries[index].Key is not null)
+            {
+                if(hashEntries[index].Key!.Equals(key))
+                {
+                    hashEntries[index].Value = value;
+                    return true;
+                }
+            }
+            
+            index = (index+1)%hashEntries.Length;
+        }
 
         return false;
     }
 
     public bool ContainsKey(K key)
     {
-        throw new NotImplementedException();
+        int index = Hash(key)%hashEntries.Length;
+
+        while(hashEntries[index].State != HashEntryState.EmptySinceStart)
+        {
+            if(hashEntries[index].Key is not null && hashEntries[index].State == HashEntryState.Full)
+            {
+                if(hashEntries[index].Key!.Equals(key))
+                {
+                    return true;
+                }
+            }
+            
+            index = (index+1)%hashEntries.Length;
+        }
+
+        return false;
     }
 
     public bool ContainsValue(V value)
     {
-        throw new NotImplementedException();
+        int index = 0;
+
+        while(index < hashEntries.Length)
+        {
+            if(hashEntries[index].Key is not null && hashEntries[index].State == HashEntryState.Full)
+            {
+                if(hashEntries[index].Value!.Equals(value))
+                {
+                    return true;
+                }
+            }
+            
+            index++;
+        }
+
+        return false;
     }
 
     public V Get(K key)
     {
-        throw new NotImplementedException();
+        int index = Hash(key)%hashEntries.Length;
+
+        while(hashEntries[index].State != HashEntryState.EmptySinceStart)
+        {
+            if(hashEntries[index].Key is not null)
+            {
+                if(hashEntries[index].Key!.Equals(key))
+                {
+                    return hashEntries[index].Value;
+                }
+            }
+            
+            index = (index+1)%hashEntries.Length;
+        }
+        throw new KeyNotFoundException();
     }
 
     public List<K> GetKeys()
     {
-        throw new NotImplementedException();
+        List<K> keys = new List<K>();
+        int index = 0;
+
+        while(index < hashEntries.Length)
+        {
+            if (hashEntries[index].State == HashEntryState.Full)
+            {
+                keys.Add(hashEntries[index].Key);
+            }
+            index++;
+        }
+        return keys;
     }
 
     public List<V> GetValues()
     {
-        throw new NotImplementedException();
+        List<V> values = new List<V>();
+        int index = 0;
+
+        while(index < hashEntries.Length)
+        {
+            if (hashEntries[index].State == HashEntryState.Full)
+            {
+                values.Add(hashEntries[index].Value);
+            }
+            index++;
+        }
+        return values;
     }
 
     public bool Remove(K key)
     {
-        throw new NotImplementedException();
+        int index = Hash(key)%hashEntries.Length;
+
+        while(hashEntries[index].State != HashEntryState.EmptySinceStart)
+        {
+            if(hashEntries[index].Key is not null && hashEntries[index].State == HashEntryState.Full)
+            {
+                if(hashEntries[index].Key!.Equals(key))
+                {
+                    hashEntries[index].Clear();
+                    count--;
+                    return true;
+                }
+            }
+            
+            index = (index+1)%hashEntries.Length;
+        }
+        return false;
     }
 
     private int Hash(K key)

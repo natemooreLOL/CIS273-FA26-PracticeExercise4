@@ -1,4 +1,6 @@
-﻿namespace PracticeExercise4;
+﻿using System.Data;
+
+namespace PracticeExercise4;
 
 public class HashTableChaining<K, V> : IHashTable<K, V>
 {
@@ -11,6 +13,12 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
     public HashTableChaining()
     {
         // init all entry lists
+        entryListArray = new List<HashEntry<K, V>>[initialCapacity];
+
+        for(int i = 0; i < entryListArray.Length; i++)
+        {
+            entryListArray[i] = new List<HashEntry<K, V>>();
+        }
         
     }
 
@@ -21,21 +29,35 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
 
     public bool Add(K key, V value)
     {
+        if(key is null)
+        {
+            throw new NoNullAllowedException();
+        }
         // resize if needed
-        
+        if(LoadFactor > MAX_LOAD_FACTOR)
+        {
+            Resize();
+        }
 
         // get the hash of the key
-        
+        int hash = Hash(key);
 
         // find the correct array index / element
-        
+        int arrayindex = hash % entryListArray.Length;
 
         // check if key is already present
-        
+        foreach(var entry in entryListArray[arrayindex])
+        {
+            if(entry.Key.Equals(key))
+            {
+                entry.Value = value;
+                return true;
+            }
+        }
 
         // add the new key/value pair to the correct list
-       
-
+        entryListArray[arrayindex].Add(new HashEntry<K, V>(key, value));
+        count++;
         return false;
     }
 
@@ -64,7 +86,17 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
 
     public List<K> GetKeys()
     {
-        return null;
+        var keys = new List<K>();
+
+        for (int i = 0; i < entryListArray.Length; i++)
+        {
+            foreach(var entry in entryListArray[i])
+            {
+                keys.Add(entry.Key);
+            }
+        }
+
+        return keys;
     }
 
     public List<V> GetValues()
