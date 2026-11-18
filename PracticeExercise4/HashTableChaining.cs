@@ -48,6 +48,10 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
         // check if key is already present
         foreach(var entry in entryListArray[arrayindex])
         {
+            if(entry.Key is null)
+            {
+                continue;
+            }
             if(entry.Key.Equals(key))
             {
                 entry.Value = value;
@@ -63,25 +67,60 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
 
     public bool ContainsKey(K key)
     {
-        throw new NotImplementedException();
+        int arrayindex = Hash(key) % entryListArray.Length;
+        foreach(HashEntry<K,V> entry in entryListArray[arrayindex])
+        {
+            if(entry.Key is null)
+            {
+                continue;
+            }
+            if(entry.Key.Equals(key))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public bool ContainsValue(V value)
     {
-        throw new NotImplementedException();
+        foreach(List<HashEntry<K,V>> entries in entryListArray)
+        {
+            foreach(HashEntry<K,V> entry in entries)
+            {
+                if(entry.Key is null)
+                {
+                    continue;
+                }
+                if(entry.Value.Equals(value))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public V Get(K key)
     {
         // hash the key
-        
-
+        int arrayindex = Hash(key) % entryListArray.Length;
         // find the correct index of the list
         
 
         // find the entry with the given key (in the correct list)
-        
-        return default;
+        foreach(HashEntry<K,V> entry in entryListArray[arrayindex])
+        {
+            if(entry.Key is null)
+            {
+                continue;
+            }
+            if(entry.Key.Equals(key))
+            {
+                return entry.Value;
+            }
+        }
+        throw new KeyNotFoundException();
     }
 
     public List<K> GetKeys()
@@ -92,6 +131,10 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
         {
             foreach(var entry in entryListArray[i])
             {
+                if(entry.Key is null)
+                {
+                    continue;
+                }
                 keys.Add(entry.Key);
             }
         }
@@ -101,12 +144,40 @@ public class HashTableChaining<K, V> : IHashTable<K, V>
 
     public List<V> GetValues()
     {
-        throw new NotImplementedException();
+        var values = new List<V>();
+
+        for (int i = 0; i < entryListArray.Length; i++)
+        {
+            foreach(var entry in entryListArray[i])
+            {
+                if(entry.Key is null)
+                {
+                    continue;
+                }
+                values.Add(entry.Value);
+            }
+        }
+
+        return values;
     }
 
     public bool Remove(K key)
     {
-        throw new NotImplementedException();
+        int arrayindex = Hash(key) % entryListArray.Length;
+        foreach(HashEntry<K,V> entry in entryListArray[arrayindex])
+        {
+            if(entry.Key is null)
+            {
+                continue;
+            }
+            if(entry.Key.Equals(key))
+            {
+                entryListArray[arrayindex].Remove(entry);
+                count--;
+                return true;
+            }
+        }
+        return false;
     }
 
 
